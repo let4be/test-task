@@ -14,4 +14,4 @@ option 2/3/4 are united, use `max` to limit the number of OK responses while can
 
 ### Postgres
 
-you can find an example schema that could be used to store stats in `./postgres.sql`
+you can find an example schema that could be used to store stats in `./postgres/schemas.sql`
