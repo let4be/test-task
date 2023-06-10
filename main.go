@@ -18,16 +18,16 @@ var timeout time.Duration
 
 type taskStatus struct {
 	url  string
-	stat Stat
+	stat stat
 	err  error
 }
 
-type Stat struct {
+type stat struct {
 	ResponseCode *int
 	Duration     time.Duration
 }
 
-type statTracker struct {
+type statusTracker struct {
 	total     int
 	ok        int
 	errors    int
@@ -35,13 +35,13 @@ type statTracker struct {
 	codes     map[int]int
 }
 
-func newStatTracker() *statTracker {
-	return &statTracker{
+func newStatusTracker() *statusTracker {
+	return &statusTracker{
 		codes: make(map[int]int),
 	}
 }
 
-func (t *statTracker) printSummary() {
+func (t *statusTracker) printSummary() {
 	log.WithFields(log.Fields{
 		"TOTAL":     t.total,
 		"OK":        t.ok,
@@ -51,7 +51,7 @@ func (t *statTracker) printSummary() {
 	}).Info("Crawling finished")
 }
 
-func (t *statTracker) track(status taskStatus) {
+func (t *statusTracker) track(status taskStatus) {
 	logger := log.WithField("url", status.url)
 
 	t.total++
@@ -73,21 +73,21 @@ func (t *statTracker) track(status taskStatus) {
 	}
 }
 
-func newStatWithResponseCode(code int, startedAt time.Time) Stat {
-	return Stat{
+func newStatWithResponseCode(code int, startedAt time.Time) stat {
+	return stat{
 		ResponseCode: &code,
 		Duration:     time.Since(startedAt),
 	}
 }
 
-func newStat(startedAt time.Time) Stat {
-	return Stat{
+func newStat(startedAt time.Time) stat {
+	return stat{
 		ResponseCode: nil,
 		Duration:     time.Since(startedAt),
 	}
 }
 
-func head(ctx context.Context, url string) (Stat, error) {
+func head(ctx context.Context, url string) (stat, error) {
 	started := time.Now()
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
@@ -124,7 +124,7 @@ func headWithStatus(ctx context.Context, url string) taskStatus {
 }
 
 func serialExec(ctx context.Context, urls []string) {
-	tracker := newStatTracker()
+	tracker := newStatusTracker()
 
 	for _, url := range urls {
 		status := headWithStatus(ctx, url)
@@ -159,7 +159,7 @@ func parallelExec(ctx context.Context, urls chan string, concurrency int, maxOk 
 		close(resCh)
 	}()
 
-	statTracker := newStatTracker()
+	statTracker := newStatusTracker()
 	for taskStatus := range resCh {
 		statTracker.track(taskStatus)
 
